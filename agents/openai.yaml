@@ -1,4 +1,4 @@
 interface:
-  display_name: "Proxmox CI CD Guardian"
+  display_name: "Proxmox CI/CD Deploy Skill"
   short_description: "CI/CD deploy and troubleshooting for Proxmox clusters"
   default_prompt: "Use this skill to design, debug, and harden GitHub Actions deploy workflows to Proxmox hosts and LXC containers."

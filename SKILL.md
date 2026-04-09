@@ -10,6 +10,18 @@ description: Design, debug, and harden CI/CD deploy pipelines to Proxmox (single
 Use this skill to build reliable Proxmox deploy jobs and to debug failing GitHub Actions deploy runs quickly.
 Prioritize deterministic staging, explicit logging, and fail-fast behavior across network, auth, cluster-node, and in-container execution layers.
 
+## Placeholder contract
+
+Use these placeholders consistently in generated workflows and scripts:
+
+| Placeholder | Meaning | Example |
+| --- | --- | --- |
+| `CT_ID` | Target LXC container ID in Proxmox | `124` |
+| `APP_DIR` | Absolute app path inside the container | `/opt/myapp` |
+| `EXPECTED_NODE` | Proxmox node expected/reachable for precheck | `pve2` |
+| `SERVICE_NAME` | Systemd service to restart after deploy | `myapp` |
+| `HEALTH_URL` | In-container health endpoint URL | `http://127.0.0.1:8000/health` |
+
 ## Workflow
 
 ### 1. Lock deployment topology first

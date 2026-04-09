@@ -1,0 +1,100 @@
+name: Deploy to Proxmox LXC
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via Proxmox host
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROXMOX_HOST }}
+          username: ${{ secrets.PROXMOX_USER }}
+          key: ${{ secrets.PROXMOX_SSH_KEY }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -euxo pipefail
+
+            CT_ID="<CT_ID>"
+            APP_DIR="<APP_DIR>"
+            EXPECTED_NODE="<EXPECTED_NODE>"
+            SERVICE_NAME="<SERVICE_NAME>"
+            HEALTH_URL="<HEALTH_URL>"
+            PCT_EXEC_RETRIES=2
+
+            CURRENT_NODE="$(hostname -s)"
+            echo "STAGE=DEBUG HOST CURRENT_NODE=${CURRENT_NODE}"
+
+            echo "STAGE=PRECHECK SSH EXPECTED_NODE=${EXPECTED_NODE}"
+            if ! ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=no "${EXPECTED_NODE}" hostname >/tmp/precheck-node.out 2>/tmp/precheck-node.err; then
+              echo "ERROR: SSH trust between Proxmox nodes not configured"
+              cat /tmp/precheck-node.err || true
+              exit 1
+            fi
+
+            echo "STAGE=NODE RESOLUTION"
+            CT_CONF_PATH="$(ls /etc/pve/nodes/*/lxc/${CT_ID}.conf 2>/dev/null | head -n1 || true)"
+            [ -z "${CT_CONF_PATH}" ] && echo "ERROR: CT ${CT_ID} not found" && exit 1
+
+            CT_NODE="$(echo "${CT_CONF_PATH}" | sed -E 's#^/etc/pve/nodes/([^/]+)/lxc/[0-9]+\.conf$#\1#')"
+            [ -z "${CT_NODE}" ] && echo "ERROR: Cannot parse CT node" && exit 1
+            echo "CURRENT_NODE=${CURRENT_NODE} CT_NODE=${CT_NODE}"
+
+            pct_exec() {
+              CMD="$1"
+              ATTEMPT=1
+
+              while [ "${ATTEMPT}" -le "${PCT_EXEC_RETRIES}" ]; do
+                RUN_OK=1
+                LOCAL_MATCH=0
+                [ "${CT_NODE}" = "${CURRENT_NODE}" ] && LOCAL_MATCH=1 || true
+
+                if [ "${LOCAL_MATCH}" -eq 1 ]; then
+                  echo "pct_exec method=local node=${CURRENT_NODE} attempt=${ATTEMPT}"
+                  if pct exec "${CT_ID}" -- bash -lc "set -euxo pipefail; ${CMD}"; then
+                    RUN_OK=0
+                  fi
+                else
+                  echo "pct_exec method=ssh_fallback node=${CT_NODE} attempt=${ATTEMPT}"
+                  if ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=no "${CT_NODE}" "pct exec ${CT_ID} -- bash -lc 'set -euxo pipefail; ${CMD}'"; then
+                    RUN_OK=0
+                  fi
+                fi
+
+                [ "${RUN_OK}" -eq 0 ] && return 0 || true
+                ATTEMPT=$((ATTEMPT + 1))
+                sleep 2
+              done
+
+              echo "ERROR: pct_exec failed after ${PCT_EXEC_RETRIES} attempts"
+              exit 1
+            }
+
+            echo "STAGE=SYNC"
+            pct_exec "git config --global --add safe.directory ${APP_DIR} && cd ${APP_DIR} && git fetch origin main && git reset --hard origin/main"
+
+            echo "STAGE=INSTALL"
+            pct_exec "cd ${APP_DIR} && source .venv/bin/activate && pip install -r requirements.txt"
+
+            echo "STAGE=RESTART"
+            pct_exec "systemctl restart ${SERVICE_NAME}"
+
+            echo "STAGE=HEALTH"
+            HEALTH_OK=0
+            for ATTEMPT in 1 2 3 4 5; do
+              if pct_exec "curl -fsS ${HEALTH_URL}"; then
+                HEALTH_OK=1
+                break
+              fi
+              sleep 3
+            done
+
+            [ "${HEALTH_OK}" -ne 1 ] && echo "ERROR: health check failed" && exit 1

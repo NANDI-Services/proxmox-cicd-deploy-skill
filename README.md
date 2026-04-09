@@ -2,6 +2,8 @@
 
 Public Codex skill for designing, debugging, and hardening CI/CD deploy pipelines to Proxmox hosts and LXC containers.
 
+Skill name: `proxmox-cicd-deploy-skill`
+
 ## What this skill does
 
 `proxmox-cicd-deploy-skill` helps you:
@@ -18,6 +20,16 @@ Use this skill when:
 - deploy steps run `pct exec` inside LXC containers
 - GitHub Actions deploys fail with connectivity/auth/node-resolution errors
 - `appleboy/ssh-action` (`drone-ssh`) shell behavior causes flaky runs
+
+## Compatibility matrix
+
+| Component | Tested/Expected |
+| --- | --- |
+| Proxmox VE host | 8.x (single node and cluster) |
+| CI runner | GitHub Actions hosted Linux runner |
+| Remote shell tooling | `ssh`, `bash`, `curl` |
+| Proxmox commands | `pct`, `/etc/pve` cluster FS |
+| In-container runtime | `git`, Python virtualenv (`.venv`), `systemd` |
 
 ## Installation
 
@@ -51,14 +63,28 @@ or:
 Use $proxmox-cicd-deploy-skill to generate a hardened cluster-safe deploy workflow using CT_ID, APP_DIR, EXPECTED_NODE, SERVICE_NAME, and HEALTH_URL.
 ```
 
+## Workflow example
+
+See [examples/github-actions-proxmox-deploy.yml](examples/github-actions-proxmox-deploy.yml) for a starter GitHub Actions deploy job using this skill's recommended stages and placeholders.
+
 ## Included files
 
 - `SKILL.md`
 - `agents/openai.yaml`
 - `references/proxmox-cicd-playbook.md`
+- `examples/github-actions-proxmox-deploy.yml`
 
 ## Validate locally
 
+### Bash
+
 ```bash
-python C:/Users/ezesc/.codex/skills/.system/skill-creator/scripts/quick_validate.py .
+python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" .
+```
+
+### PowerShell
+
+```powershell
+$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }
+python (Join-Path $codexHome 'skills/.system/skill-creator/scripts/quick_validate.py') .
 ```
