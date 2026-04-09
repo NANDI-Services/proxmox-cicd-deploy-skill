@@ -4,7 +4,7 @@ Public Codex skill for designing, debugging, and hardening CI/CD deploy pipeline
 
 ## What this skill does
 
-`proxmox-cicd-deploy-guardian` helps you:
+`proxmox-cicd-deploy-skill` helps you:
 - enforce a reliable deploy topology from GitHub Actions runners to Proxmox/LXC
 - classify failures by layer (runner/SSH, cluster node, shell-wrapper, in-container runtime)
 - use deterministic deploy stages (`SYNC`, `INSTALL`, `RESTART`, `HEALTH`)
@@ -27,14 +27,14 @@ Clone or copy this folder into your Codex skills path.
 
 ```bash
 mkdir -p ~/.codex/skills
-cp -R proxmox-cicd-deploy-skill ~/.codex/skills/proxmox-cicd-deploy-guardian
+cp -R proxmox-cicd-deploy-skill ~/.codex/skills/proxmox-cicd-deploy-skill
 ```
 
 ### Option B: `$CODEX_HOME/skills`
 
 ```bash
 mkdir -p "$CODEX_HOME/skills"
-cp -R proxmox-cicd-deploy-skill "$CODEX_HOME/skills/proxmox-cicd-deploy-guardian"
+cp -R proxmox-cicd-deploy-skill "$CODEX_HOME/skills/proxmox-cicd-deploy-skill"
 ```
 
 ## Example usage
@@ -42,13 +42,13 @@ cp -R proxmox-cicd-deploy-skill "$CODEX_HOME/skills/proxmox-cicd-deploy-guardian
 Prompt Codex with:
 
 ```text
-Use $proxmox-cicd-deploy-guardian to debug this failing GitHub Actions deploy to Proxmox.
+Use $proxmox-cicd-deploy-skill to debug this failing GitHub Actions deploy to Proxmox.
 ```
 
 or:
 
 ```text
-Use $proxmox-cicd-deploy-guardian to generate a hardened cluster-safe deploy workflow using CT_ID, APP_DIR, EXPECTED_NODE, SERVICE_NAME, and HEALTH_URL.
+Use $proxmox-cicd-deploy-skill to generate a hardened cluster-safe deploy workflow using CT_ID, APP_DIR, EXPECTED_NODE, SERVICE_NAME, and HEALTH_URL.
 ```
 
 ## Included files

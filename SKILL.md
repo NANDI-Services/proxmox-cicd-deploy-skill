@@ -1,5 +1,5 @@
 ---
-name: proxmox-cicd-deploy-guardian
+name: proxmox-cicd-deploy-skill
 description: Design, debug, and harden CI/CD deploy pipelines to Proxmox (single-node and cluster) from GitHub Actions hosted runners. Use when a workflow deploys through SSH, runs pct exec inside LXC containers, fails with network/auth/node-resolution errors, or shows shell-wrapper issues with appleboy/ssh-action (drone-ssh).
 ---
 
